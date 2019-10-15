@@ -1,111 +1,29 @@
-// Dependencies
-var express = require("express");
-var expressHandlebars = require("express-handlebars");
-var logger = require("morgan");
-var mongoose = require("mongoose");
+const express = require("express");
+const path = require("path");
+const bodyParser = require("body-parser");
+const mongoose = require('mongoose');
+const logger = require('morgan');
+const axios = require("axios");
+const cheerio = require("cheerio");
 
-// Our scraping tools
-// Axios is a promised-based http library, similar to jQuery's Ajax method
-// It works on the client and on the server
-var axios = require("axios");
-var cheerio = require("cheerio");
+const db = require("./models");
 
-// Require all models
-var db = require("./models");
-
-// Require Routes
-var apiRoutes = require("./routes/apiRoutes");
-var apiRoutes = require("./routes/htmlRoutes");
-
-// Initialize Express
-var app = express();
-
-// Configure middleware
+const PORT = process.env.PORT || 3000;
+const app = express();
 
 // Use morgan logger for logging requests
 app.use(logger("dev"));
 // Parse request body as JSON
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-// Make public a static folder
 app.use(express.static("public"));
 
-// If deployed, use the deployed database. Otherwise use the local mongoDB database
-var MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost/mongoDB";
-// Connect to the Mongo DB
-mongoose.connect(MONGODB_URI, { useNewUrlParser: true });
+mongoose.connect("mongodb://localhost/nyt-scraper", { useNewUrlParser: true });
 
-// Routes
+const routes = require('./routes/routes.js');
+app.use(routes);
 
-// A GET route for scraping the echoJS website
-app.get("/scrape", function(req, res) {
-  // First, we grab the body of the html with axios
-  axios.get("http://www.echojs.com/").then(function(response) {
-    // Then, we load that into cheerio and save it to $ for a shorthand selector
-    var $ = cheerio.load(response.data);
 
-    // Now, we grab every h2 within an article tag, and do the following:
-    $("article h2").each(function(i, element) {
-      // Save an empty result object
-      var result = {};
-
-      // Add the text and href of every link, and save them as properties of the result object
-      result.title = $(this)
-        .children("a")
-        .text();
-      result.link = $(this)
-        .children("a")
-        .attr("href");
-
-      // Create a new Article using the `result` object built from scraping
-      db.Article.create(result)
-        .then(function(dbArticle) {
-          // View the added result in the console
-          console.log(dbArticle);
-        })
-        .catch(function(err) {
-          // If an error occurred, log it
-          console.log(err);
-        });
-    });
-
-    // Send a message to the client
-    res.send("Scrape Complete");
-  });
-});
-
-// Route for getting all Articles from the db
-app.get("/articles", function(req, res) {
-  db.Article.find({})
-    .then(function(dbArticle) {
-      // If all Articles are found, send them to client
-      res.json(dbArticle);
-    })
-    .catch(function(error) {
-      // If an error occurs, send back to client
-      res.json(error);
-    });
-});
-
-// Route for grabbing a specific Article by id, populate it with it's note
-app.get("/articles/:id", function(req, res) {
-  // TODO
-  // ====
-  // Finish the route so it finds one article using the req.params.id,
-  // and run the populate method with "note",
-  // then responds with the article with the note included
-});
-
-// Route for saving/updating an Article's associated Note
-app.post("/articles/:id", function(req, res) {
-  // TODO
-  // ====
-  // save the new note that gets posted to the Notes collection
-  // then find an article from the req.params.id
-  // and update it's "note" property with the _id of the new note
-});
-
-// Start the server
-app.listen(process.env.PORT || 3000, function() {
-  console.log("App running on port https://localhost:" + PORT);
+app.listen(PORT, () => {
+    console.log(`🌎 ==> Server now on port ${PORT}!`);
 });

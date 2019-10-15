@@ -1,10 +1,10 @@
-var mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
 // Save a reference to the Schema constructor
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
 
 // Using the Schema constructor, create a new UserSchema object
-var ArticleSchema = new Schema({
+const ArticleSchema = new Schema({
   title: {
     type: String,
     required: true,
@@ -18,12 +18,11 @@ var ArticleSchema = new Schema({
     type: String,
     required: true
   },
+  img: {
+    type: String
+  },
   saved: {
     type: Boolean
-  },
-  note: {
-    type: Schema.Types.ObjectId,
-    ref: "Note"
   }
 });
 
